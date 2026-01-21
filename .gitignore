@@ -10,3 +10,4 @@ wheels/
 .venv
 snowflake_accessKeys.csv
 logs/
+.vscode
