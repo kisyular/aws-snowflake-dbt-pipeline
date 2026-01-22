@@ -71,6 +71,16 @@ A comprehensive guide for setting up an end-to-end data pipeline using AWS S3, S
     - [Demo Models](#demo-models)
       - [snowflake\_dbt\_bookings.sql](#snowflake_dbt_bookingssql)
       - [snowflake\_dbt\_listing\_id.sql](#snowflake_dbt_listing_idsql)
+    - [Gold Layer Models](#gold-layer-models)
+      - [obt.sql (One Big Table)](#obtsql-one-big-table)
+      - [Ephemeral Models](#ephemeral-models)
+  - [Snapshots](#snapshots)
+    - [Snapshot Configuration](#snapshot-configuration)
+    - [dim\_bookings](#dim_bookings)
+    - [dim\_hosts](#dim_hosts)
+    - [dim\_listings](#dim_listings)
+    - [Running Snapshots](#running-snapshots)
+    - [Snapshot Output Columns](#snapshot-output-columns)
   - [Custom Macros](#custom-macros)
     - [multiply Macro](#multiply-macro)
     - [upper\_case Macro](#upper_case-macro)
@@ -1276,6 +1286,239 @@ A demo model showing model references with filtering:
 ```sql
 select * from {{ ref("snowflake_dbt_bookings") }} where listing_id = 1
 ```
+
+### Gold Layer Models
+
+The Gold layer contains business-ready, denormalized data optimized for analytics and reporting.
+
+#### obt.sql (One Big Table)
+
+The One Big Table (OBT) is a denormalized fact table that combines booking, listing, and host data from the silver layer using dynamic Jinja configuration:
+
+```sql
+{% set configs = [
+    {
+        "table": "airbnb.silver.silver_bookings",
+        "columns": "silver_bookings.*",
+        "alias": "silver_bookings",
+    },
+    {
+        "table": "airbnb.silver.silver_listings",
+        "columns": "silver_listings.host_id, silver_listings.property_type, silver_listings.room_type, silver_listings.city, silver_listings.country, silver_listings.accommodates, silver_listings.bedrooms, silver_listings.bathrooms, silver_listings.price_per_night, silver_listings.price_per_night_tag, silver_listings.created_at AS listing_created_at",
+        "alias": "silver_listings",
+        "join_condition": "silver_bookings.listing_id = silver_listings.listing_id",
+    },
+    {
+        "table": "airbnb.silver.silver_hosts",
+        "columns": "silver_hosts.host_name, silver_hosts.host_since, silver_hosts.is_superhost, silver_hosts.response_rate, silver_hosts.response_rate_quality, silver_hosts.created_at AS host_created_at",
+        "alias": "silver_hosts",
+        "join_condition": "silver_listings.host_id = silver_hosts.host_id",
+    },
+] %}
+
+select
+    {% for config in configs %}
+        {{ config["columns"] }}{% if not loop.last %},{% endif %}
+    {% endfor %}
+from
+{% for config in configs %}
+    {% if loop.first %} {{ config["table"] }} as {{ config["alias"] }}
+    {% else %}
+        left join {{ config["table"] }} as {{ config["alias"] }}
+        on {{ config["join_condition"] }}
+    {% endif %}
+{% endfor %}
+```
+
+**Key Features:**
+- **Dynamic Configuration**: Uses Jinja dictionaries to define tables, columns, and join conditions
+- **Flexible Joins**: Left joins silver_bookings with silver_listings and silver_hosts
+- **Wide Table Format**: Contains 22 columns from all three silver tables
+- **Analytics Ready**: Optimized for BI tools and reporting queries
+
+**Compiled Output:**
+```sql
+select
+    silver_bookings.*,
+    silver_listings.host_id, silver_listings.property_type, silver_listings.room_type,
+    silver_listings.city, silver_listings.country, silver_listings.accommodates,
+    silver_listings.bedrooms, silver_listings.bathrooms, silver_listings.price_per_night,
+    silver_listings.price_per_night_tag, silver_listings.created_at AS listing_created_at,
+    silver_hosts.host_name, silver_hosts.host_since, silver_hosts.is_superhost,
+    silver_hosts.response_rate, silver_hosts.response_rate_quality,
+    silver_hosts.created_at AS host_created_at
+from
+    airbnb.silver.silver_bookings as silver_bookings
+left join
+    airbnb.silver.silver_listings as silver_listings
+    on silver_bookings.listing_id = silver_listings.listing_id
+left join
+    airbnb.silver.silver_hosts as silver_hosts
+    on silver_listings.host_id = silver_hosts.host_id
+```
+
+#### Ephemeral Models
+
+Ephemeral models are not materialized in the database but are used as CTEs (Common Table Expressions) in downstream models. They extract specific domains from the OBT:
+
+**bookings.sql** - Extracts booking-specific columns:
+```sql
+{{ config(materialized="ephemeral") }}
+
+with bookings as (
+    select booking_id, booking_date, booking_status, created_at
+    from {{ ref("obt") }}
+)
+select * from bookings
+```
+
+**hosts.sql** - Extracts host-specific columns:
+```sql
+{{ config(materialized="ephemeral") }}
+
+with hosts as (
+    select host_id, host_name, host_since, is_superhost,
+           response_rate_quality, host_created_at
+    from {{ ref("obt") }}
+)
+select * from hosts
+```
+
+**listings.sql** - Extracts listing-specific columns:
+```sql
+{{ config(materialized="ephemeral") }}
+
+with listings as (
+    select listing_id, property_type, room_type, city, country,
+           price_per_night_tag, listing_created_at
+    from {{ ref("obt") }}
+)
+select * from listings
+```
+
+| Model | Columns | Purpose |
+|-------|---------|--------|
+| bookings | 4 | Core booking attributes |
+| hosts | 6 | Host profile data |
+| listings | 7 | Property listing details |
+
+---
+
+## Snapshots
+
+Snapshots implement **Slowly Changing Dimensions (SCD Type 2)** to track historical changes in dimension data. They capture the state of records over time by adding validity timestamps.
+
+### Snapshot Configuration
+
+All snapshots use the following strategy:
+- **Strategy**: `timestamp` - Detects changes based on an `updated_at` column
+- **Database**: `AIRBNB`
+- **Schema**: `gold`
+- **Valid To Default**: `'9999-12-31'` - Indicates currently active records
+
+### dim_bookings
+
+Tracks historical changes to booking records:
+
+```yaml
+snapshots:
+  - name: dim_bookings
+    relation: ref('bookings')
+    config:
+      schema: gold
+      database: AIRBNB
+      unique_key: BOOKING_ID
+      strategy: timestamp
+      updated_at: CREATED_AT
+      dbt_valid_to_current: "to_date('9999-12-31')"
+```
+
+| Setting | Value | Description |
+|---------|-------|-------------|
+| unique_key | BOOKING_ID | Primary key for tracking changes |
+| strategy | timestamp | Uses timestamp-based change detection |
+| updated_at | CREATED_AT | Column used to detect changes |
+
+### dim_hosts
+
+Tracks historical changes to host records:
+
+```yaml
+snapshots:
+  - name: dim_hosts
+    relation: ref('hosts')
+    config:
+      schema: gold
+      database: AIRBNB
+      unique_key: HOST_ID
+      strategy: timestamp
+      updated_at: HOST_CREATED_AT
+      dbt_valid_to_current: "to_date('9999-12-31')"
+```
+
+| Setting | Value | Description |
+|---------|-------|-------------|
+| unique_key | HOST_ID | Primary key for tracking changes |
+| strategy | timestamp | Uses timestamp-based change detection |
+| updated_at | HOST_CREATED_AT | Column used to detect changes |
+
+### dim_listings
+
+Tracks historical changes to listing records:
+
+```yaml
+snapshots:
+  - name: dim_listings
+    relation: ref('listings')
+    config:
+      schema: gold
+      database: AIRBNB
+      unique_key: LISTING_ID
+      strategy: timestamp
+      updated_at: LISTING_CREATED_AT
+      dbt_valid_to_current: "to_date('9999-12-31')"
+```
+
+| Setting | Value | Description |
+|---------|-------|-------------|
+| unique_key | LISTING_ID | Primary key for tracking changes |
+| strategy | timestamp | Uses timestamp-based change detection |
+| updated_at | LISTING_CREATED_AT | Column used to detect changes |
+
+### Running Snapshots
+
+```bash
+# Run all snapshots
+dbt snapshot
+
+# Run specific snapshot
+dbt snapshot --select dim_bookings
+```
+
+**Expected Output:**
+```
+Running with dbt=1.11.2
+Found 3 snapshots
+
+Running snapshots:
+  ✓ dim_bookings
+  ✓ dim_hosts
+  ✓ dim_listings
+
+Completed successfully
+Done. PASS=3 WARN=0 ERROR=0 SKIP=0 TOTAL=3
+```
+
+### Snapshot Output Columns
+
+When a snapshot runs, dbt adds the following metadata columns:
+
+| Column | Description |
+|--------|-------------|
+| dbt_scd_id | Unique identifier for each snapshot record |
+| dbt_updated_at | Timestamp when the record was last updated |
+| dbt_valid_from | Timestamp when this version of the record became valid |
+| dbt_valid_to | Timestamp when this version was superseded (9999-12-31 for current) |
 
 ---
 
