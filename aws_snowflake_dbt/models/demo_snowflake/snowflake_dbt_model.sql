@@ -1,1 +1,1 @@
-{{ config(materialized="table") }} select * from airbnb.staging.bookings
+{{ config(materialized="table") }} select * from {{ source("staging", "bookings") }}
