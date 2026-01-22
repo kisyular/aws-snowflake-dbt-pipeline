@@ -1,0 +1,73 @@
+models:
+  - name: bronze_bookings
+    description: "{{ doc('table_bronze_bookings') }}"
+    columns:
+      - name: booking_id
+        description: "{{ doc('booking_id') }}"
+        data_tests:
+          - unique
+          - not_null
+      - name: listing_id
+        description: "{{ doc('listing_id') }}"
+      - name: booking_date
+        description: "{{ doc('booking_date') }}"
+      - name: nights_booked
+        description: "{{ doc('nights_booked') }}"
+      - name: booking_amount
+        description: "{{ doc('booking_amount') }}"
+      - name: cleaning_fee
+        description: "{{ doc('cleaning_fee') }}"
+      - name: service_fee
+        description: "{{ doc('service_fee') }}"
+      - name: booking_status
+        description: "{{ doc('booking_status') }}"
+      - name: created_at
+        description: "{{ doc('created_at') }}"
+
+  - name: bronze_hosts
+    description: "{{ doc('table_bronze_hosts') }}"
+    columns:
+      - name: host_id
+        description: "{{ doc('host_id') }}"
+        data_tests:
+          - unique
+          - not_null
+      - name: host_name
+        description: "{{ doc('host_name') }}"
+      - name: host_since
+        description: "{{ doc('host_since') }}"
+      - name: is_superhost
+        description: "{{ doc('is_superhost') }}"
+      - name: response_rate
+        description: "{{ doc('response_rate') }}"
+      - name: created_at
+        description: "{{ doc('created_at') }}"
+
+  - name: bronze_listings
+    description: "{{ doc('table_bronze_listings') }}"
+    columns:
+      - name: listing_id
+        description: "{{ doc('listing_id') }}"
+        data_tests:
+          - unique
+          - not_null
+      - name: host_id
+        description: "{{ doc('host_id') }}"
+      - name: property_type
+        description: "{{ doc('property_type') }}"
+      - name: room_type
+        description: "{{ doc('room_type') }}"
+      - name: city
+        description: "{{ doc('city') }}"
+      - name: country
+        description: "{{ doc('country') }}"
+      - name: accommodates
+        description: "{{ doc('accommodates') }}"
+      - name: bedrooms
+        description: "{{ doc('bedrooms') }}"
+      - name: bathrooms
+        description: "{{ doc('bathrooms') }}"
+      - name: price_per_night
+        description: "{{ doc('price_per_night') }}"
+      - name: created_at
+        description: "{{ doc('created_at') }}"
