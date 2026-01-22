@@ -34,3 +34,15 @@ models:
     # Config indicated by + and applies to all files under models/demo_snowflake/
     demo:
       +materialized: view
+      +schema: demo
+    bronze:
+      +materialized: table
+      +schema: bronze
+    silver:
+      +materialized: table
+      +schema: silver
+    gold:
+      +materialized: table
+      +schema: gold
+      ephemeral:
+        +materialized: ephemeral
