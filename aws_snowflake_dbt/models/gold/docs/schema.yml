@@ -105,3 +105,32 @@ models:
         description: "{{ doc('price_per_night_tag') }}"
       - name: listing_created_at
         description: "{{ doc('listing_created_at') }}"
+
+  - name: fact
+    description: "{{ doc('table_fact') }}"
+    columns:
+      - name: booking_id
+        description: "{{ doc('booking_id') }}"
+        data_tests:
+          - unique
+          - not_null
+      - name: listing_id
+        description: "{{ doc('listing_id') }}"
+      - name: host_id
+        description: "{{ doc('host_id') }}"
+      - name: total_amount
+        description: "{{ doc('total_amount') }}"
+      - name: service_fee
+        description: "{{ doc('service_fee') }}"
+      - name: cleaning_fee
+        description: "{{ doc('cleaning_fee') }}"
+      - name: accommodates
+        description: "{{ doc('accommodates') }}"
+      - name: bedrooms
+        description: "{{ doc('bedrooms') }}"
+      - name: bathrooms
+        description: "{{ doc('bathrooms') }}"
+      - name: price_per_night
+        description: "{{ doc('price_per_night') }}"
+      - name: response_rate
+        description: "{{ doc('response_rate') }}"

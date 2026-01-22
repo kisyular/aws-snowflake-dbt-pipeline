@@ -21,3 +21,7 @@ Timestamp when the listing record was created, aliased from silver_listings.crea
 {% docs host_created_at %}
 Timestamp when the host record was created, aliased from silver_hosts.created_at to distinguish from other created_at fields in the OBT.
 {% enddocs %}
+
+{% docs table_fact %}
+Fact table joining the One Big Table (OBT) with dimension snapshots (dim_listings, dim_hosts). Extracts key metrics and foreign keys for analytics: booking_id, listing_id, host_id, total_amount, service_fee, cleaning_fee, accommodates, bedrooms, bathrooms, price_per_night, and response_rate. Uses dynamic Jinja configuration for flexible column and join management.
+{% enddocs %}
