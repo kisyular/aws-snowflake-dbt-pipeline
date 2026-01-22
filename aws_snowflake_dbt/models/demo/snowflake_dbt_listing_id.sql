@@ -1,2 +1,1 @@
--- Use the `ref` function to select from other models
-select * from {{ ref("snowflake_dbt_model") }} where listing_id = 1
+select * from {{ ref("snowflake_dbt_bookings") }} where listing_id = 1

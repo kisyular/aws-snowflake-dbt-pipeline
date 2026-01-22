@@ -34,10 +34,10 @@ The current status of the booking (e.g., 'confirmed', 'cancelled', 'pending').
 The timestamp when the record was created in the database.
 {% enddocs %}
 
-{% docs table_snowflake_dbt_model %}
+{% docs table_snowflake_dbt_bookings %}
 A model that selects all booking records from the staging area. This serves as a base model for further transformations.
 {% enddocs %}
 
-{% docs table_listid_id_is_1 %}
+{% docs table_snowflake_dbt_listing_id %}
 A filtered view of bookings specifically for listing_id = 1. Used for analyzing performance of this specific property.
 {% enddocs %}

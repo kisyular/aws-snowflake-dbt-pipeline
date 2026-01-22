@@ -32,5 +32,5 @@ clean-targets:         # directories to be removed by `dbt clean`
 models:
   aws_snowflake_dbt:
     # Config indicated by + and applies to all files under models/demo_snowflake/
-    demo_snowflake:
+    demo:
       +materialized: view

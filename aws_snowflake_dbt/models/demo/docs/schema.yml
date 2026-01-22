@@ -2,8 +2,8 @@
 version: 2
 
 models:
-  - name: snowflake_dbt_model
-    description: "{{ doc('table_snowflake_dbt_model') }}"
+  - name: snowflake_dbt_bookings
+    description: "{{ doc('table_snowflake_dbt_bookings') }}"
     columns:
       - name: booking_id
         description: "{{ doc('booking_id') }}"
@@ -27,8 +27,8 @@ models:
       - name: created_at
         description: "{{ doc('created_at') }}"
 
-  - name: listid_id_is_1
-    description: "{{ doc('table_listid_id_is_1') }}"
+  - name: snowflake_dbt_listing_id
+    description: "{{ doc('table_snowflake_dbt_listing_id') }}"
     columns:
       - name: booking_id
         description: "{{ doc('booking_id') }}"
