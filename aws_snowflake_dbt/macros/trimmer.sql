@@ -1,1 +1,1 @@
-{% macro trimmer(column_name) %} {{ column_name | trim | upper }} {% endmacro %}
+{% macro trimmer(column_name) %} upper(trim({{ column_name }})) {% endmacro %}
