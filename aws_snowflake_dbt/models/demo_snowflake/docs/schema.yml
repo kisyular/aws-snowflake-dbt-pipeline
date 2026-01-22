@@ -1,0 +1,53 @@
+
+version: 2
+
+models:
+  - name: snowflake_dbt_model
+    description: "{{ doc('table_snowflake_dbt_model') }}"
+    columns:
+      - name: booking_id
+        description: "{{ doc('booking_id') }}"
+        data_tests:
+          - unique
+          - not_null
+      - name: listing_id
+        description: "{{ doc('listing_id') }}"
+      - name: booking_date
+        description: "{{ doc('booking_date') }}"
+      - name: nights_booked
+        description: "{{ doc('nights_booked') }}"
+      - name: booking_amount
+        description: "{{ doc('booking_amount') }}"
+      - name: cleaning_fee
+        description: "{{ doc('cleaning_fee') }}"
+      - name: service_fee
+        description: "{{ doc('service_fee') }}"
+      - name: booking_status
+        description: "{{ doc('booking_status') }}"
+      - name: created_at
+        description: "{{ doc('created_at') }}"
+
+  - name: listid_id_is_1
+    description: "{{ doc('table_listid_id_is_1') }}"
+    columns:
+      - name: booking_id
+        description: "{{ doc('booking_id') }}"
+        data_tests:
+          - unique
+          - not_null
+      - name: listing_id
+        description: "{{ doc('listing_id') }}"
+      - name: booking_date
+        description: "{{ doc('booking_date') }}"
+      - name: nights_booked
+        description: "{{ doc('nights_booked') }}"
+      - name: booking_amount
+        description: "{{ doc('booking_amount') }}"
+      - name: cleaning_fee
+        description: "{{ doc('cleaning_fee') }}"
+      - name: service_fee
+        description: "{{ doc('service_fee') }}"
+      - name: booking_status
+        description: "{{ doc('booking_status') }}"
+      - name: created_at
+        description: "{{ doc('created_at') }}"
